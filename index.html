@@ -1,0 +1,102 @@
+<html>
+    <head>
+        <style>
+#canvas {
+    width: 100vw; 
+    height: 56.25vw; /* height:width ratio = 9/16 = .5625  */
+    background: black;
+    max-height: 100vh;
+    max-width: 177.78vh; /* 16/9 = 1.778 */
+    margin: auto;
+    position: absolute;
+    top:0;bottom:0; /* vertical center */
+    left:0;right:0; /* horizontal center */
+}
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"/>
+        <script>
+abs = x => Math.abs(x);
+
+var ctx = document.getElementById("canvas").getContext("2d");
+ctx.canvas.width  = canvas.clientWidth;
+ctx.canvas.height = canvas.clientHeight;
+ctx.fillStyle="#FF0000"; 
+MinIm = -1.1;
+MaxIm = 1.1;
+MinRe = -2.2;
+MaxRe = 1.0;
+Re_factor = (MaxRe-MinRe)/(ctx.canvas.width-1);
+Im_factor = (MaxIm-MinIm)/(ctx.canvas.height-1);
+MaxIterations = 100;
+
+function plotMandel()
+{
+    ctx.fillStyle = "rgb(0,0,0)"; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
+    for(y=0; y<ctx.canvas.height; ++y)
+    {
+        c_im = MaxIm - y*Im_factor;
+        for(x=0; x<ctx.canvas.width; ++x)
+        {
+            c_re = MinRe + x*Re_factor;
+
+            Z_re = c_re, Z_im = c_im;
+
+            inside = true;            
+            for(n=0; n<MaxIterations; ++n)
+            {
+                Z_re2 = Z_re*Z_re, Z_im2 = Z_im*Z_im;
+                if(Z_re2 + Z_im2 > 4)
+                {
+                    inside = false;
+                    break;
+                }
+                Z_im = 2*Z_re*Z_im + c_im;
+                Z_re = Z_re2 - Z_im2 + c_re;
+            }
+            if(!inside) { ctx.fillStyle = "rgb(" + (n*255/MaxIterations) + ",0,0)"; ctx.fillRect(x, y, 1, 1); }
+        }
+    }
+}
+plotMandel();
+
+zoomf = 0.95;
+function zoom(r_x, r_y)
+{
+    rect = ctx.canvas.getBoundingClientRect();
+
+    // Center mouse position (bug somewhere in there)
+    WidthIm = (abs(MinRe) + abs(MaxRe));
+    HeightIm = (abs(MinIm) + abs(MaxIm));
+    m_x = r_x - rect.x;
+    m_y = r_y - rect.y;
+    c_x = ctx.canvas.width * abs(MinRe) / WidthIm;
+    c_y = ctx.canvas.height * abs(MinIm) / HeightIm;
+    of_x = (m_x - rect.width / 2) / rect.width * WidthIm;
+    of_y = (m_y - rect.height / 2) / rect.height * HeightIm;
+
+    MinRe += of_x;
+    MaxRe += of_x;
+    MinIm -= of_y;
+    MaxIm -= of_y;
+
+    // Zoom center of screen
+    MinIm += abs(MinIm) * (1-zoomf);
+    MaxIm -= abs(MaxIm) * (1-zoomf);    
+    MinRe += abs(MinRe) * (1-zoomf);
+    MaxRe -= abs(MaxRe) * (1-zoomf);
+
+    // Recalculate stuff
+    Re_factor = (MaxRe-MinRe)/(ctx.canvas.width-1);
+    Im_factor = (MaxIm-MinIm)/(ctx.canvas.height-1);
+    plotMandel();
+}
+function printMousePos(event) 
+{
+    zoom(event.clientX, event.clientY);
+}
+document.addEventListener("click", printMousePos);
+        </script>
+    </body>
+</html>
